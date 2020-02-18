@@ -568,6 +568,11 @@
               <FilePath>..\RT-ThreadNano\bsp\board.c</FilePath>
             </File>
             <File>
+              <FileName>ringbuffer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\RT-ThreadNano\bsp\ringbuffer.c</FilePath>
+            </File>
+            <File>
               <FileName>cpuport.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\RT-ThreadNano\libcpu\arm\cortex-m3\cpuport.c</FilePath>

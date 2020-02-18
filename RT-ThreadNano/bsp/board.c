@@ -13,6 +13,7 @@
 #include <rthw.h>
 #include <rtthread.h>
 #include "usart.h"
+#include "ringbuffer.h"
 #define _SCB_BASE       (0xE000E010UL)
 #define _SYSTICK_CTRL   (*(rt_uint32_t *)(_SCB_BASE + 0x0))
 #define _SYSTICK_LOAD   (*(rt_uint32_t *)(_SCB_BASE + 0x4))
@@ -58,18 +59,29 @@ RT_WEAK void *rt_heap_end_get(void)
 }
 #endif
 
+
+
+#ifdef UART_IT_RX_ENABLE
+ static struct rt_semaphore shell_rx_sem;
+#ifdef RT_USING_RINGBUFFER 
+#define UART_RX_BUF_LEN 16
+rt_uint8_t uart_rx_buf[UART_RX_BUF_LEN] = {0};
+struct rt_ringbuffer  uart_rxcb;         /* define ringbuffer cb */
+#endif 
+#endif
+
 /**
  * This function will initial your board.
  */
-#ifdef UART_IT_RX_ENABLE
- static struct rt_semaphore shell_rx_sem;
-#endif
 void rt_hw_board_init()
 {
     /* System Clock Update */
     SystemCoreClockUpdate();
 		#if defined(RT_USING_CONSOLE)
-		#if defined(UART_IT_RX_ENABLE)
+		#if (UART_IT_RX_ENABLE)
+		#ifdef  RT_USING_RINGBUFFER
+     rt_ringbuffer_init(&uart_rxcb, uart_rx_buf, UART_RX_BUF_LEN);
+    #endif	
 	  rt_sem_init(&(shell_rx_sem), "shell_rx", 0, RT_IPC_FLAG_FIFO);
 	  #endif
     uart_init(115200); 
@@ -101,19 +113,51 @@ void SysTick_Handler(void)
 
 /**********************************add FINSH**********************************/
 
+
+
+
 #if UART_IT_RX_ENABLE
-
 void USART1_IRQHandler(void)                	//串口1中断服务程序
-	{
-	  //uint8_t Res;
+{
+	#ifdef RT_USING_RINGBUFFER
+	  int ch = -1;
+    //rt_base_t level;
+    /* enter interrupt */
+    rt_interrupt_enter();         
 
+    if ((USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) &&
+        (USART_GetFlagStatus(USART1,USART_FLAG_RXNE) != RESET))
+    {
+        while (1)
+        {
+            ch = -1;
+            if (USART_GetFlagStatus(USART1,USART_FLAG_RXNE)!= RESET)
+            {
+                ch = (char)(USART_ReceiveData(USART1)&0XFF);;
+            }
+            if (ch == -1)
+            {
+                break;
+            }  
+            /* read data and put in ringbuffer */
+            rt_ringbuffer_putchar(&uart_rxcb, ch);
+        }        
+        rt_sem_release(&shell_rx_sem);
+    }
+
+    /* leave interrupt */
+    rt_interrupt_leave();    
+
+  #else
+	 //uint8_t Res;
 	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)  //接收中断(接收到的数据必须是0x0d 0x0a结尾)
 		{
 		   //Res =USART_ReceiveData(USART1);	//读取接收到的数据
 			/* clear interrupt */
 		   USART_ClearITPendingBit(USART1, USART_IT_RXNE);
 			 rt_sem_release(&shell_rx_sem);
-		}   		 
+		}
+  #endif	
 } 
 #endif
 
