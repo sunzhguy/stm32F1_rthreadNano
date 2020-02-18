@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F10X_HD,USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>..\USER;..\CORE;..\STM32F10x_FWLib\inc;..\SYSTEM\sys;..\RT-ThreadNano\include;..\RT-ThreadNano\bsp</IncludePath>
+              <IncludePath>..\USER;..\CORE;..\STM32F10x_FWLib\inc;..\SYSTEM\sys;..\SYSTEM\usart;..\RT-ThreadNano\include;..\RT-ThreadNano\bsp;..\RT-ThreadNano\components\finsh</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>

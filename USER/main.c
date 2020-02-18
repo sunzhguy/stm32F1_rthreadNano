@@ -13,7 +13,7 @@
 #include "stm32f10x.h"
 #include <stdlib.h>
 #include <math.h>
-#include "sys.h"
+#include "usart.h"
 #include <rtthread.h>
 
 /*****************************************
@@ -56,14 +56,14 @@ int  main(void)
 
 	 NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); //设置NVIC中断分组2:2位抢占优先级，2位响应优先级
    Led_init();
-	
+	 //uart_init(115200);
 	  while(1)
 		{
 		   LED_SET =1;
-			rt_thread_mdelay(500);
+			 rt_thread_mdelay(500);
 			 LED_SET =0;
-			rt_thread_mdelay(500);
-		
+			 rt_kprintf("hellowolrd\r\n");
+			 rt_thread_mdelay(500);
 		}
 		return 0;
 }

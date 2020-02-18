@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include <rthw.h>
 #include <rtthread.h>
-
+#include "usart.h"
 #define _SCB_BASE       (0xE000E010UL)
 #define _SYSTICK_CTRL   (*(rt_uint32_t *)(_SCB_BASE + 0x0))
 #define _SYSTICK_LOAD   (*(rt_uint32_t *)(_SCB_BASE + 0x4))
@@ -65,7 +65,7 @@ void rt_hw_board_init()
 {
     /* System Clock Update */
     SystemCoreClockUpdate();
-    
+    uart_init(115200);
     /* System Tick Configuration */
     _SysTick_Config(SystemCoreClock / RT_TICK_PER_SECOND);
 
@@ -89,3 +89,42 @@ void SysTick_Handler(void)
     /* leave interrupt */
     rt_interrupt_leave();
 }
+
+
+/**********************************add FINSH**********************************/
+/*polling to revice*/
+char rt_hw_console_getchar(void)
+{
+   int ch = -1;
+	if(USART_GetFlagStatus(USART1,USART_FLAG_RXNE) !=RESET)
+	{
+    ch = (char)(USART_ReceiveData(USART1)&0XFF);
+	}else
+	{
+		 if(USART_GetFlagStatus(USART1,USART_FLAG_ORE) != RESET)
+				{
+				 USART_ClearFlag(USART1,USART_FLAG_ORE);
+				}
+				rt_thread_mdelay(10);
+	}
+  return ch;
+}
+
+
+void rt_hw_console_output(const char *str)
+{
+	rt_enter_critical();
+	while (*str!='\0')
+	{
+		if (*str=='\n')
+		{
+			USART_SendData(USART1, '\r'); 
+			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
+		}
+		USART_SendData(USART1, *str++);
+		while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
+	}
+	rt_exit_critical();
+
+}
+
