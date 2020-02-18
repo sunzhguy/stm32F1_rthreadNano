@@ -1,0 +1,1 @@
+第一个工程建立，打样使用STM32 CPU STM32F103RE 512K FLASH  64K RAM 使用官方库版本:STM32F10x_StdPeriph_Lib_V3.5.0

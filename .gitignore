@@ -1,0 +1,9 @@
+*.ewt
+*.crun
+*.wspos
+*.cspy.bat
+*.sfr
+*.tmp
+*.xml
+Lora_SX1278
+OBJ/*
