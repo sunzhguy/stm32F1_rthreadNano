@@ -61,11 +61,19 @@ RT_WEAK void *rt_heap_end_get(void)
 /**
  * This function will initial your board.
  */
+#ifdef UART_IT_RX_ENABLE
+ static struct rt_semaphore shell_rx_sem;
+#endif
 void rt_hw_board_init()
 {
     /* System Clock Update */
     SystemCoreClockUpdate();
-    uart_init(115200);
+		#if defined(RT_USING_CONSOLE)
+		#if defined(UART_IT_RX_ENABLE)
+	  rt_sem_init(&(shell_rx_sem), "shell_rx", 0, RT_IPC_FLAG_FIFO);
+	  #endif
+    uart_init(115200); 
+  	#endif
     /* System Tick Configuration */
     _SysTick_Config(SystemCoreClock / RT_TICK_PER_SECOND);
 
@@ -92,10 +100,32 @@ void SysTick_Handler(void)
 
 
 /**********************************add FINSH**********************************/
+
+#if UART_IT_RX_ENABLE
+
+void USART1_IRQHandler(void)                	//串口1中断服务程序
+	{
+	  //uint8_t Res;
+
+	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)  //接收中断(接收到的数据必须是0x0d 0x0a结尾)
+		{
+		   //Res =USART_ReceiveData(USART1);	//读取接收到的数据
+			/* clear interrupt */
+		   USART_ClearITPendingBit(USART1, USART_IT_RXNE);
+			 rt_sem_release(&shell_rx_sem);
+		}   		 
+} 
+#endif
+
 /*polling to revice*/
 char rt_hw_console_getchar(void)
-{
-   int ch = -1;
+{ 
+	int ch = -1;
+	#ifdef UART_IT_RX_ENABLE
+	rt_sem_take(&shell_rx_sem, RT_WAITING_FOREVER); 
+	ch = (char)(USART_ReceiveData(USART1)&0XFF);
+	return ch;
+	#else
 	if(USART_GetFlagStatus(USART1,USART_FLAG_RXNE) !=RESET)
 	{
     ch = (char)(USART_ReceiveData(USART1)&0XFF);
@@ -108,7 +138,11 @@ char rt_hw_console_getchar(void)
 				rt_thread_mdelay(10);
 	}
   return ch;
+	#endif
 }
+
+
+
 
 
 void rt_hw_console_output(const char *str)

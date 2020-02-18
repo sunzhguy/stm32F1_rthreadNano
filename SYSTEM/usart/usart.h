@@ -4,6 +4,8 @@
 #include "sys.h" 
 
 
+#define  UART_IT_RX_ENABLE  1
+
 void uart_init(uint32_t bound);
 
 
